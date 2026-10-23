@@ -1,10 +1,9 @@
-
 <?php
 
 $host = getenv('DB_HOST') ?: 'db';
 $dbname = getenv('DB_NAME') ?: 'taskflow';
 $user = getenv('DB_USER') ?: 'taskflow_user';
-$password = getenv('DB_PASSWORD') ?: 'taskflow@6';
+$password = getenv('DB_PASSWORD') ?: 'taskflow6';
 
 $dsn = "pgsql:host=$host;dbname=$dbname";
 

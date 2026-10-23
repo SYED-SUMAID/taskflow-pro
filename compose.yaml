@@ -1,35 +1,50 @@
+
 services:
   web:
     build: .
     container_name: taskflow-web
     ports:
       - "8082:80"
+    volumes:
+      - ./public:/var/www/html
+      - ./app:/var/www/app
+
     environment:
-      - DB_HOST= db
-      - DB_NAME= ${DB_NAME}
-      - DB_USER= ${DB_USER}
-      - DB_PASSWORD= ${DB_PASSWORD}
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     depends_on:
-      - db:
-          condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - taskflow_network
     restart: unless-stopped
 
-    db:
-      image: postgres:16
-      container_name: taskflow-db
-      environment:
-      - POSTGRES_DB= ${DB_NAME}
-      - POSTGRES_USER= ${DB_USER}
-      - POSTGRES_PASSWORD= ${DB_PASSWORD}
-      volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-        interval: 10s
-        timeout: 5s
-        retries: 5      
-      restart: unless-stopped
+  db:
+    image: postgres:16
+    container_name: taskflow-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taskflow_network
+    restart: unless-stopped
 
 volumes:
-  db_data:    
+  postgres_data:
+
+networks:
+  taskflow_network:
+    driver: bridge

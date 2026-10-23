@@ -1,19 +1,21 @@
 
 const newProjectBtn = document.getElementById("newProjectBtn");
+const projectForm = document.getElementById("projectForm");
+const cancelProjectBtn = document.getElementById("cancelProjectBtn");
+const projectNameInput = document.getElementById("projectName");
+
+projectForm.hidden = true;
 
 newProjectBtn.addEventListener("click", () => {
-    const projectName = prompt("Enter your new project name:");
+    projectForm.hidden = false;
+    projectForm.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
 
-    if (projectName === null) {
-        return;
-    }
+    projectNameInput.focus();
+});
 
-    if (projectName.trim() === "") {
-        alert("Project name cannot be empty.");
-        return;
-    }
-
-    alert(
-        `Project "${projectName.trim()}" will be added when project creation is connected to the backend.`
-    );
+cancelProjectBtn.addEventListener("click", () => {
+    projectForm.hidden = true;
 });
