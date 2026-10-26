@@ -1,0 +1,69 @@
+.muted { color: var(--muted); }
+.panel { padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+
+.task-form { display: grid; grid-template-columns: 2fr 1.2fr .8fr 1fr auto; gap: 10px; }
+.task-form input, .task-form select {
+  width: 100%; min-width: 0; font: inherit; color: var(--text);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px;
+}
+.task-form input:focus, .task-form select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.filters { display: flex; gap: 6px; margin: 24px 0 12px; }
+.filters a { padding: 7px 14px; border-radius: 99px; color: var(--muted); font-weight: 700; font-size: 14px; border: 1px solid var(--line); }
+.filters a:hover { color: var(--text); }
+.filters a.on { background: var(--accent-soft); color: #fff; border-color: var(--accent); }
+
+.task-list { display: grid; gap: 8px; }
+.task-row {
+  display: grid; grid-template-columns: 32px 1fr auto 70px auto; align-items: center; gap: 14px;
+  padding: 12px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+}
+.task-row form { margin: 0; }
+.task-main { display: grid; gap: 2px; min-width: 0; }
+.task-title { font-weight: 700; overflow-wrap: anywhere; }
+.task-project { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.task-project i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.task-due { color: var(--muted); font-size: 13px; font-weight: 600; text-align: right; }
+.task-due.overdue { color: var(--danger); }
+.task-row.done .task-title { text-decoration: line-through; color: var(--muted); }
+
+.check {
+  width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--muted);
+  background: transparent; color: #fff; font-weight: 800; cursor: pointer; line-height: 1; padding: 0;
+}
+.check:hover { border-color: var(--ok); }
+.task-row.done .check { background: var(--ok); border-color: var(--ok); color: #0b1220; }
+
+.badge { padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; border: 1px solid var(--line); color: var(--muted); }
+.badge.p-high { color: var(--danger); border-color: var(--danger); }
+.badge.p-medium { color: #f5b942; border-color: #f5b942; }
+
+.del { background: none; border: 0; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 6px; }
+.del:hover { color: var(--danger); }
+
+.cal-nav { display: flex; gap: 8px; }
+.cal-nav a { padding: 9px 14px; }
+.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-head { color: var(--muted); font-size: 13px; font-weight: 700; padding: 0 4px 4px; }
+.cal-cell { min-height: 108px; padding: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
+.cal-cell.empty { background: transparent; border-color: transparent; }
+.cal-cell.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.cal-date { font-weight: 700; font-size: 13px; color: var(--muted); align-self: flex-start; }
+.cal-date:hover { color: var(--text); }
+.cal-cell.today .cal-date { color: #fff; }
+.cal-task {
+  display: block; padding: 3px 7px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  background: color-mix(in srgb, var(--c) 28%, transparent); border-left: 3px solid var(--c);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cal-task.done { text-decoration: line-through; opacity: .55; }
+.cal-more { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+@media (max-width: 860px) {
+  .task-form { grid-template-columns: 1fr 1fr; }
+  .task-form input[name="title"], .task-form button { grid-column: 1 / -1; }
+  .task-row { grid-template-columns: 32px 1fr auto; }
+  .task-row .badge, .task-row .task-due { display: none; }
+  .cal-cell { min-height: 72px; padding: 4px; }
+  .cal-task { font-size: 10px; padding: 2px 4px; }
+}

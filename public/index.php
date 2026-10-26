@@ -62,6 +62,15 @@ try {
          ORDER BY id DESC'
     )->fetchAll();
 
+    $upcoming = $pdo->query(
+        "SELECT t.title, t.due_date, p.name AS project_name, p.color
+         FROM tasks t
+         JOIN projects p ON p.id = t.project_id
+         WHERE t.status != 'completed'
+         ORDER BY t.due_date ASC NULLS LAST, t.id DESC
+         LIMIT 5"
+    )->fetchAll();
+
 } catch (PDOException $e) {
     error_log('Dashboard query failed: ' . $e->getMessage());
     http_response_code(500);
@@ -83,7 +92,11 @@ function escapeHtml($value): string
 
     <title>TaskFlow Pro | Dashboard</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/pages.css">
 </head>
 
 <body>
@@ -93,9 +106,9 @@ function escapeHtml($value): string
 
         <nav>
             <a href="index.php" class="active">Dashboard</a>
-            <a href="#projects">Projects</a>
-            <a href="#tasks">My Tasks</a>
-            <a href="#">Calendar</a>
+            <a href="index.php#projects">Projects</a>
+            <a href="tasks.php">My Tasks</a>
+            <a href="calendar.php">Calendar</a>
             <a href="#">Settings</a>
         </nav>
 
@@ -108,7 +121,6 @@ function escapeHtml($value): string
 
         <header class="topbar">
             <div>
-                <p class="eyebrow">WORKSPACE</p>
                 <h1>Dashboard</h1>
                 <p class="subtitle">
                     Manage your projects and stay productive.
@@ -120,7 +132,7 @@ function escapeHtml($value): string
                 id="newProjectBtn"
                 type="button"
             >
-                + New Project
+                New project
             </button>
         </header>
 
@@ -139,30 +151,37 @@ function escapeHtml($value): string
         <section class="stats-grid">
 
             <article class="stat-card">
-                <p>Total Projects</p>
+                <p>Projects</p>
                 <h2><?= $projectCount ?></h2>
-                <span>Projects in your workspace</span>
+                <span>In your workspace</span>
             </article>
 
             <article class="stat-card">
-                <p>Total Tasks</p>
+                <p>Tasks</p>
                 <h2><?= $taskCount ?></h2>
-                <span>Tasks across all projects</span>
+                <span>Across all projects</span>
             </article>
 
             <article class="stat-card">
-                <p>Completed Tasks</p>
+                <p>Completed</p>
                 <h2><?= $completedCount ?></h2>
-                <span>Successfully completed</span>
+                <span>Done and dusted</span>
             </article>
 
             <article class="stat-card">
-                <p>Pending Tasks</p>
+                <p>Pending</p>
                 <h2><?= $pendingCount ?></h2>
-                <span>Tasks left to complete</span>
+                <span>Still to do</span>
             </article>
 
         </section>
+
+        <?php if ($taskCount > 0): $pct = (int) round($completedCount / $taskCount * 100); ?>
+            <div class="progress">
+                <span><?= $pct ?>% complete</span>
+                <div class="progress-track"><div class="progress-fill" style="width: <?= $pct ?>%"></div></div>
+            </div>
+        <?php endif; ?>
 
         <section class="content-card project-form-card" id="projectForm">
             <div class="section-heading">
@@ -200,7 +219,7 @@ function escapeHtml($value): string
                     </button>
 
                     <button type="submit" class="primary-button">
-                        Create Project
+                        Create project
                     </button>
                 </div>
 
@@ -209,8 +228,8 @@ function escapeHtml($value): string
 
         <section class="content-card projects-card" id="projects">
             <div class="section-heading">
-                <h2>Your Projects</h2>
-                <p>Your projects are saved in PostgreSQL.</p>
+                <h2>Projects</h2>
+                <p>Everything you are working on.</p>
             </div>
 
             <?php if (count($projects) === 0): ?>
@@ -218,7 +237,7 @@ function escapeHtml($value): string
                 <div class="empty-state">
                     <h3>No projects yet</h3>
                     <p>
-                        Select New Project to create your first project.
+                        Select New project to add your first one.
                     </p>
                 </div>
 
@@ -228,11 +247,11 @@ function escapeHtml($value): string
 
                     <?php foreach ($projects as $project): ?>
 
-                        <article class="project-item">
+                        <article class="project-item" style="--project-color: <?= escapeHtml($project['color']) ?>;">
                             <div
                                 class="project-color"
                                 style="background-color: <?= escapeHtml($project['color']) ?>;"
-                            ></div>
+                            ><?= escapeHtml(mb_strtoupper(mb_substr($project['name'], 0, 1))) ?></div>
 
                             <div class="project-details">
                                 <h3><?= escapeHtml($project['name']) ?></h3>
@@ -247,7 +266,7 @@ function escapeHtml($value): string
                             </div>
 
                             <span class="project-id">
-                                #<?= (int) $project['id'] ?>
+                                #<?= (int) $project['id'] ?> · Created <?= escapeHtml(date('j M Y', strtotime($project['created_at']))) ?>
                             </span>
                         </article>
 
@@ -260,9 +279,28 @@ function escapeHtml($value): string
 
         <section id="tasks" class="content-card tasks-placeholder">
             <div class="section-heading">
-                <h2>My Tasks</h2>
-                <p>Task creation and management will be added next.</p>
+                <h2>Upcoming tasks</h2>
+                <p><a href="tasks.php" style="color: var(--accent);">Manage all tasks</a></p>
             </div>
+
+            <?php if (count($upcoming) === 0): ?>
+                <div class="empty-state">
+                    <h3>No open tasks</h3>
+                    <p>Add your first task on the My Tasks page.</p>
+                </div>
+            <?php else: ?>
+                <div class="task-list">
+                    <?php foreach ($upcoming as $t): ?>
+                        <div class="task-row" style="grid-template-columns: 1fr 90px;">
+                            <div class="task-main">
+                                <span class="task-title"><?= escapeHtml($t['title']) ?></span>
+                                <span class="task-project"><i style="background: <?= escapeHtml($t['color']) ?>"></i><?= escapeHtml($t['project_name']) ?></span>
+                            </div>
+                            <span class="task-due"><?= $t['due_date'] ? escapeHtml(date('j M', strtotime($t['due_date']))) : 'No date' ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
 
     </main>
