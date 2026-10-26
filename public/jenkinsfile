@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
+
+    stages {
+
+        stage('Lint PHP') {
+            steps {
+                sh '''
+                    docker run --rm -v "$PWD":/app -w /app php:8.2-cli \
+                        sh -c 'find public app -name "*.php" -print0 | xargs -0 -n1 php -l'
+                '''
+            }
+        }
+
+        stage('Build and test') {
+            environment {
+                STACK       = 'taskflow-ci'
+                WEB_PORT    = '8083'
+                DB_NAME     = 'taskflow'
+                DB_USER     = 'ci_user'
+                DB_PASSWORD = 'ci_password_only'
+            }
+            steps {
+                sh 'docker compose -p taskflow-ci up -d --build'
+                sh 'bash scripts/smoke_test.sh http://localhost:8083 --write'
+            }
+            post {
+                always {
+                    sh 'docker compose -p taskflow-ci logs --no-color > ci-logs.txt || true'
+                    sh 'docker compose -p taskflow-ci down -v || true'
+                    archiveArtifacts artifacts: 'ci-logs.txt', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                expression { env.GIT_BRANCH ==~ /.*(main|master)$/ }
+            }
+            environment {
+                WEB_PORT = '8082'
+                DB_NAME  = 'taskflow'
+                DB_USER  = 'taskflow_user'
+            }
+            steps {
+                withCredentials([string(credentialsId: 'taskflow-db-password', variable: 'DB_PASSWORD')]) {
+                    sh 'docker compose -p taskflow-pro up -d --build'
+                    sh 'bash scripts/smoke_test.sh http://localhost:8082'
+                }
+            }
+            post {
+                success {
+                    sh 'docker image prune -f || true'
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo 'Pipeline finished: TaskFlow Pro is live on port 8082.' }
+        failure { echo 'Pipeline failed. Check the stage logs and ci-logs.txt.' }
+    }
+}
